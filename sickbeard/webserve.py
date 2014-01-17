@@ -1112,6 +1112,8 @@ class ConfigProviders:
                 sickbeard.HDBITS = curEnabled
             elif curProvider == 'tvtorrents':
                 sickbeard.TVTORRENTS = curEnabled
+            elif curProvider == 'kat':
+                sickbeard.KAT = curEnabled
             elif curProvider == 'torrentleech':
                 sickbeard.TORRENTLEECH = curEnabled
             elif curProvider == 'btn':
