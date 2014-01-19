@@ -285,7 +285,7 @@ class PostProcessor(object):
 
             self._log(u"Copying file from " + cur_file_path + " to " + new_file_path, logger.DEBUG)
             try:
-                helpers.copyFile(cur_file_path, new_file_path)
+                helpers.copyFile(cur_file_path, new_file_path, hardlink=True)
                 helpers.chmodAsParent(new_file_path)
             except (IOError, OSError), e:
                 logger.log(u"Unable to copy file " + cur_file_path + " to " + new_file_path + ": " + ex(e), logger.ERROR)

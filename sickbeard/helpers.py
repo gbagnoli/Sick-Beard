@@ -443,8 +443,15 @@ def listMediaFiles(path):
     return files
 
 
-def copyFile(srcFile, destFile):
-    ek.ek(shutil.copyfile, srcFile, destFile)
+def copyFile(srcFile, destFile, hardlink=False):
+    if hardlink:
+        try:
+            ek.ek(os.link, srcFile, destFile)
+        except:
+            ek.ek(shutil.copyfile, srcFile, destFile)
+    else:
+        ek.ek(shutil.copyfile, srcFile, destFile)
+
     try:
         ek.ek(shutil.copymode, srcFile, destFile)
     except OSError:
