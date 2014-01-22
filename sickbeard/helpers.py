@@ -119,10 +119,10 @@ def isMediaFile(filename):
         return False
 
     sepFile = filename.rpartition(".")
-    
+
     if re.search('extras?$', sepFile[0], re.I):
         return False
-        
+
     if sepFile[2].lower() in mediaExtensions:
         return True
     else:
@@ -130,10 +130,10 @@ def isMediaFile(filename):
 
 def isRarFile(filename):
     archive_regex = '(?P<file>^(?P<base>(?:(?!\.part\d+\.rar$).)*)\.(?:(?:part0*1\.)?rar)$)'
-    
+
     if re.search(archive_regex, filename):
         return True
-    
+
     return False
 
 def isBeingWritten(filepath):
@@ -141,7 +141,7 @@ def isBeingWritten(filepath):
     ctime = max(ek.ek(os.path.getctime, filepath), ek.ek(os.path.getmtime, filepath))
     if ctime > time.time() - 60:
         return True
-    
+
     return False
 
 def sanitizeFileName(name):
@@ -155,14 +155,14 @@ def sanitizeFileName(name):
     >>> sanitizeFileName('.a.b..')
     'a.b'
     '''
-    
+
     # remove bad chars from the filename
     name = re.sub(r'[\\/\*]', '-', name)
     name = re.sub(r'[:"<>|?]', '', name)
-    
+
     # remove leading/trailing periods and spaces
     name = name.strip(' .')
-    
+
     return name
 
 
@@ -268,7 +268,7 @@ def download_file(url, filename):
         _remove_file_failed(filename)
         logger.log(u"Unknown exception while loading URL " + url + ": " + traceback.format_exc(), logger.WARNING)
         return False
-    
+
     return True
 
 def findCertainShow(showList, tvdbid):
@@ -514,8 +514,15 @@ def listMediaFiles(path):
 
     return files
 
-def copyFile(srcFile, destFile):
-    ek.ek(shutil.copyfile, srcFile, destFile)
+def copyFile(srcFile, destFile, hardlink=False):
+    if hardlink:
+        try:
+            ek.ek(os.link, srcFile, destFile)
+        except:
+            ek.ek(shutil.copyfile, srcFile, destFile)
+    else:
+        ek.ek(shutil.copyfile, srcFile, destFile)
+
     try:
         ek.ek(shutil.copymode, srcFile, destFile)
     except OSError:
@@ -626,18 +633,18 @@ def rename_ep_file(cur_path, new_path, old_path_length=0):
         # approach from the left
         cur_file_ext  = cur_path[old_path_length:]
         cur_file_name = cur_path[:old_path_length]
-        
+
     if cur_file_ext[1:] in subtitleExtensions:
         #Extract subtitle language from filename
         sublang = os.path.splitext(cur_file_name)[1][1:]
-        
+
         #Check if the language extracted from filename is a valid language
         try:
             language = subliminal.language.Language(sublang, strict=True)
-            cur_file_ext = '.'+sublang+cur_file_ext 
+            cur_file_ext = '.'+sublang+cur_file_ext
         except ValueError:
             pass
-        
+
     # put the extension on the incoming file
     new_path += cur_file_ext
 
@@ -695,14 +702,14 @@ def chmodAsParent(childPath):
         return
 
     parentPath = ek.ek(os.path.dirname, childPath)
-    
+
     if not parentPath:
         logger.log(u"No parent path provided in " + childPath + ", unable to get permissions from it", logger.DEBUG)
         return
-    
+
     parentPathStat = ek.ek(os.stat, parentPath)
     parentMode = stat.S_IMODE(parentPathStat[stat.ST_MODE])
-    
+
     childPathStat = ek.ek(os.stat, childPath)
     childPath_mode = stat.S_IMODE(childPathStat[stat.ST_MODE])
 
@@ -766,9 +773,9 @@ def fixSetGroupID(childPath):
 def sanitizeSceneName (name, ezrss=False):
     """
     Takes a show name and returns the "scenified" version of it.
-    
+
     ezrss: If true the scenified version will follow EZRSS's cracksmoker rules as best as possible
-    
+
     Returns: A string containing the scene version of the show name given.
     """
 
@@ -892,7 +899,7 @@ def get_xml_text(element, mini_dom=False):
 
     return text.strip()
 
- 
+
 def backupVersionedFile(old_file, version):
     numTries = 0
 
@@ -928,7 +935,7 @@ def tryInt(s, s_default = 0):
 
 # generates a md5 hash of a file
 def md5_for_file(filename, block_size=2**16):
-    try:    
+    try:
         with open(filename,'rb') as f:
             md5 = hashlib.md5()
             while True:
@@ -940,22 +947,22 @@ def md5_for_file(filename, block_size=2**16):
             return md5.hexdigest()
     except Exception:
         return None
-    
+
 def get_lan_ip():
     """
-    Simple function to get LAN localhost_ip 
+    Simple function to get LAN localhost_ip
     http://stackoverflow.com/questions/11735821/python-get-localhost-ip
     """
 
     if os.name != "nt":
         import fcntl
         import struct
-    
+
         def get_interface_ip(ifname):
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             return socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s',
                                     ifname[:15]))[20:24])
-    
+
     ip = socket.gethostbyname(socket.gethostname())
     if ip.startswith("127.") and os.name != "nt":
         interfaces = [
@@ -972,7 +979,7 @@ def get_lan_ip():
         for ifname in interfaces:
             try:
                 ip = get_interface_ip(ifname)
-                print ifname, ip 
+                print ifname, ip
                 break
             except IOError:
                 pass
@@ -994,7 +1001,7 @@ def check_url(url):
         return conn.getresponse().status in good_codes
     except StandardError:
         return None
-        
+
 
 """
 Encryption
@@ -1005,7 +1012,7 @@ By Pedro Jose Pereira Vieito <pvieito@gmail.com> (@pvieito)
 * The keys should be unique for each device
 
 To add a new encryption_version:
-  1) Code your new encryption_version        
+  1) Code your new encryption_version
   2) Update the last encryption_version available in webserve.py
   3) Remember to maintain old encryption versions and key generators for retrocompatibility
 """
@@ -1015,7 +1022,7 @@ unique_key1 = hex(uuid.getnode()**2) # Used in encryption v1
 
 # Encryption Functions
 def encrypt(data, encryption_version=0, decrypt=False):
-    
+
     # Version 1: Simple XOR encryption (this is not very secure, but works)
     if encryption_version == 1:
     	if decrypt:
@@ -1025,6 +1032,6 @@ def encrypt(data, encryption_version=0, decrypt=False):
     # Version 0: Plain text
     else:
         return data
-        
+
 def decrypt(data, encryption_version=0):
 	return encrypt(data, encryption_version, decrypt=True)
